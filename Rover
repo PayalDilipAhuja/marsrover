@@ -1,0 +1,52 @@
+public class Rover
+    {
+        public string Id { get; }
+        public Coordinate Coordinate { get; }
+        public Direction Direction { get; }
+
+        private Rover(Coordinate coordinate, Direction direction)
+        {
+            Coordinate = coordinate;
+            Direction = direction;
+            Id = $"{coordinate.X}-{coordinate.Y}-{direction}";
+        }
+
+        public override string ToString() => $"{Coordinate.X} {Coordinate.Y} {Direction}";
+
+        public Result<Rover> Move(Movement[] movements, Coordinate[] obstacles, Coordinate minimum, Coordinate maximum)
+        {
+            var newCoordinate = new Coordinate(Coordinate.X, Coordinate.Y);
+            Direction newDirection = Direction;
+
+            foreach (var movement in movements)
+            {
+                if (movement == Movement.Move)
+                {
+                    newCoordinate = newCoordinate.Move(newDirection);
+
+                    if (newCoordinate.IsWithin(minimum, maximum) == false)
+                    {
+                        return Result<Rover>.Failure(Error.OutOfBoundRover(Id));
+                    }
+
+                    if (obstacles.Any(o => o.Equals(newCoordinate)))
+                    {
+                        return Result<Rover>.Failure(Error.Obstacle(Id, newCoordinate));
+                    }
+                }
+                else
+                {
+                    newDirection = movement == Movement.TurnLeft ? newDirection.TurnLeft() : newDirection.TurnRight();
+                }
+            }
+
+            return Result<Rover>.Success(new Rover(newCoordinate, newDirection));
+        }
+
+        public static Rover Create(string roverDetails)
+        {
+            var parts = roverDetails.Split(" ");
+
+            return new Rover(new Coordinate(int.Parse(parts[0]), int.Parse(parts[1])), Direction.Create(parts[2]));
+        }
+    }
